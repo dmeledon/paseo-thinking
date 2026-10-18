@@ -1,6 +1,8 @@
 # paseo-thinking
 
-A Paseo plugin that shows the latest bold thinking summary for Codex and an estimate of visible thinking tokens for Claude. Codex blocks start collapsed; Claude blocks start expanded. Successful turns collapse their thinking blocks. Blocks remain manually toggleable.
+A Paseo plugin that shows the latest bold thinking summary for Codex and an estimate of visible thinking tokens for Claude. Codex blocks start collapsed; Claude blocks start expanded. Successful turns collapse their thinking blocks. You can toggle each block afterward.
+
+![Codex thinking rows in Paseo](images/codex-rows.png)
 
 ## Compatibility
 
@@ -8,13 +10,25 @@ Requires Paseo 0.11.4 or later, with plugins enabled. No core changes are needed
 
 ## Install
 
-Once this repository is public, enable plugins in Paseo and install it from GitHub:
+Enable plugins in Paseo, then install from GitHub or npm:
 
 ```sh
 paseo plugin install github:dmeledon/paseo-thinking
+paseo plugin install npm:paseo-thinking@0.1.0
 ```
 
-For local development:
+The GitHub and npm sources are alternative ways to install the same plugin. Use the registry listing once the plugin has been accepted into the Paseo plugin hub.
+
+## Limitations
+
+- The Claude count estimates displayed text length divided by four. It is not billable usage or hidden reasoning-token usage, and accuracy varies by language and content.
+- The plugin remembers successful turns in the daemon's memory. Reloading the plugin or restarting the daemon clears those results; older rows then use their provider's default expansion state.
+- This plugin replaces Paseo's thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling it. It does not read Paseo's built-in thinking expansion preference.
+- Thinking text is plain selectable text. Long blocks follow new text until you scroll away from the bottom, and resume following when you return to it.
+
+## Development
+
+For local development, run:
 
 ```sh
 npm ci
@@ -26,19 +40,14 @@ paseo plugin install /absolute/path/to/paseo-thinking
 
 After editing source, run `paseo plugin reload thinking`. Do not restart the daemon to reload a plugin.
 
-This repository is the distribution channel. The package is marked private because it is not published to npm.
+## How it works
 
-## Behavior and limits
-
-- Counts are explicitly approximate: displayed JavaScript string length divided by four, rounded up. They are not billable usage or hidden reasoning tokens.
 - While a turn is active, mounted thinking rows poll outcomes once per second, sharing a query cache and in-flight requests. A successful outcome triggers a paginated read of its recorded thinking rows before they collapse.
 - Turn IDs and recorded row timestamps identify the thinking belonging to a successful turn. Missing outcomes are never assumed to mean success.
 - Providers must distinguish adjacent turns with different IDs; the plugin reads the latest contiguous group with the completed turn's ID.
-- Outcome tracking is in memory. Reloads and daemon restarts leave unknown history at each provider's default expansion state. Manual toggles survive scrolling during the client session.
-- A temporary timeline read error is retried before giving up. Success keys for the 100 most recently closed agents remain available to history views; older ones return to their provider's default expansion state.
-- The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
+- A temporary timeline read error is retried before giving up. Success keys for the 100 most recently closed agents remain available to history views.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
 - Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Codex shows the latest text inside `**` beside Thinking; Claude shows the approximate token count there.
-- Expanded thinking text is plain selectable text. The detail area grows with its text up to the default 400-pixel maximum, then follows new text inside the scrollable area while streaming. Scrolling up pauses following until you return to the bottom. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
+- The detail area grows with its text up to the default 400-pixel maximum, then scrolls inside that height. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
 
 See [OVERVIEW.md](OVERVIEW.md) for the in-app description.

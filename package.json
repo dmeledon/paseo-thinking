@@ -1,14 +1,29 @@
 {
   "name": "paseo-thinking",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "description": "Provider-specific thinking summaries and successful-turn auto-collapse for Paseo.",
+  "description": "Thinking rows for Paseo with Codex summaries, Claude token estimates, and turn-aware collapse.",
+  "author": "Damon Meledones",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmeledon/paseo-thinking.git"
+  },
+  "homepage": "https://github.com/dmeledon/paseo-thinking#readme",
+  "bugs": "https://github.com/dmeledon/paseo-thinking/issues",
+  "keywords": [
+    "paseo",
+    "paseo-plugin",
+    "thinking",
+    "codex",
+    "claude"
+  ],
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
     "index.client.tsx",
     "index.server.ts",
+    "images",
     "client",
     "server",
     "shared"

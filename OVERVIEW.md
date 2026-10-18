@@ -1,11 +1,15 @@
 # Thinking
 
-Codex thinking blocks start collapsed and show the latest text inside `**` beside Thinking. Claude blocks start expanded and show a running estimate of visible tokens beside Thinking. When a turn succeeds, its thinking blocks collapse. You can toggle each block afterward.
+Thinking shows Codex's latest bold summary beside a collapsed thinking row. Claude rows start expanded and show an approximate count of visible thinking tokens. Successful turns collapse their thinking rows; you can open or close any row yourself.
 
-The rows follow Paseo's standard thinking layout. Expanded text is plain selectable text and grows up to the default maximum height, then follows new text inside the block while streaming. Scrolling up pauses following until you return to the bottom.
+Expanded text is plain and selectable. The row grows to Paseo's default maximum height, then scrolls within that space. It follows new text while you stay at the bottom and lets you read earlier text without snapping back.
 
-The Claude estimate uses one token per four text characters. It measures displayed text, which can be a summary, and is not the model's actual reasoning-token usage. Accuracy varies by language and content.
+## Setup
 
-Requires Paseo 0.11.4 or later. The plugin provides its own thinking rows and does not read Paseo's built-in thinking expansion preference.
+Requires Paseo 0.11.4 or later with plugins enabled. No account, token, external tool, or operating-system-specific setup is required. See the README for installation instructions. Disable another plugin that replaces reasoning rows before enabling this one.
 
-The daemon component observes turn outcomes and reads thinking rows from Paseo's timeline to identify successful turns. It retries temporary timeline errors. It keeps the 100 most recently closed agents' results in memory, makes no external requests, and reads no files. Older turns whose completion the plugin did not observe use their provider's default expansion state. Reloading the plugin or restarting the daemon clears remembered outcomes.
+## Data access and limits
+
+The plugin reads thinking rows, agent status, provider type, and turn outcomes through Paseo. Its daemon component keeps recent successful-turn results in memory. It makes no external requests, reads no local files, and does not send thinking text to another service. Reloading the plugin or restarting the daemon clears remembered outcomes.
+
+Claude's token count is an estimate based on displayed text length, not the model's reasoning-token usage. It may count a summary rather than full reasoning. The plugin does not use Paseo's built-in thinking expansion preference.

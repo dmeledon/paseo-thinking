@@ -1,4 +1,7 @@
 {
   "id": "thinking",
+  "name": "Thinking",
+  "description": "Codex summaries and Claude token estimates in Paseo thinking rows.",
+  "media": ["images/codex-rows.png"],
   "requirements": { "paseo": ">=0.11.4" }
 }
