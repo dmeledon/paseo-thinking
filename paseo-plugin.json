@@ -1,0 +1,4 @@
+{
+  "id": "thinking",
+  "requirements": { "paseo": ">=0.11.4" }
+}

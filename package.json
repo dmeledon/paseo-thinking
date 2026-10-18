@@ -1,0 +1,35 @@
+{
+  "name": "paseo-thinking",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Streaming thinking estimates and successful-turn auto-collapse for Paseo.",
+  "files": [
+    "paseo-plugin.json",
+    "OVERVIEW.md",
+    "index.client.tsx",
+    "index.server.ts",
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.0",
+    "@getpaseo/plugin": "0.11.4",
+    "@tanstack/react-query": "^5.90.0",
+    "@types/react": "~19.1.0",
+    "@types/react-test-renderer": "^19.1.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-test-renderer": "^19.1.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0",
+    "zod": "^4.4.3"
+  }
+}
