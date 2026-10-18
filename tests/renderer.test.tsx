@@ -10,6 +10,7 @@ import { thinkingKey } from "../shared/thinking";
 const state = vi.hoisted(() => ({
   response: { active: true, successes: [] as string[] },
   provider: "claude",
+  scrollToEnd: vi.fn(),
 }));
 
 vi.mock("@getpaseo/plugin/client", () => ({
@@ -17,11 +18,19 @@ vi.mock("@getpaseo/plugin/client", () => ({
     selector({ status: "running", provider: state.provider }),
   useRpc: () => async () => state.response,
 }));
-vi.mock("@getpaseo/plugin/client/react-native", () => ({
-  Icon: () => null,
-  ScrollView: "scroll",
-  useRevealedText: (text: string) => text,
-}));
+vi.mock("@getpaseo/plugin/client/react-native", async () => {
+  const React = await import("react");
+  return {
+    Icon: () => null,
+    ScrollView: React.forwardRef((props: Record<string, unknown>, ref) => {
+      React.useImperativeHandle(ref, () => ({
+        scrollToEnd: state.scrollToEnd,
+      }));
+      return React.createElement("scroll", props);
+    }),
+    useRevealedText: (text: string) => text,
+  };
+});
 vi.mock("react-native", () => ({
   Pressable: "button",
   Text: "text",
@@ -94,6 +103,7 @@ beforeEach(() => {
   query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   state.response = { active: true, successes: [] };
   state.provider = "claude";
+  state.scrollToEnd.mockClear();
 });
 
 afterEach(async () => {
@@ -103,6 +113,89 @@ afterEach(async () => {
 });
 
 describe("thinking renderer", () => {
+  it("follows streaming text once it exceeds the block's maximum height", async () => {
+    await render();
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    await act(async () => scroll.props.onContentSizeChange(100, 399));
+    expect(state.scrollToEnd).not.toHaveBeenCalled();
+    await act(async () => scroll.props.onContentSizeChange(100, 401));
+    expect(state.scrollToEnd).toHaveBeenCalledWith({ animated: false });
+
+    state.scrollToEnd.mockClear();
+    await render({
+      ...props,
+      item: { ...props.item, data: { text: "finished", phase: "complete" } },
+    });
+    await act(async () => scroll.props.onContentSizeChange(100, 500));
+    expect(state.scrollToEnd).toHaveBeenCalledWith({ animated: false });
+  });
+
+  it("leaves an already complete block at its initial position", async () => {
+    await render({
+      ...props,
+      item: { ...props.item, data: { text: "history", phase: "complete" } },
+    });
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    await act(async () => scroll.props.onContentSizeChange(100, 500));
+    expect(state.scrollToEnd).not.toHaveBeenCalled();
+  });
+
+  it("lets manual scrolling pause and resume following the trace", async () => {
+    await render();
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    const scrollAt = async (offset: number, height: number) => {
+      await act(async () =>
+        scroll.props.onScroll({
+          nativeEvent: {
+            contentOffset: { y: offset },
+            contentSize: { height },
+            layoutMeasurement: { height: 400 },
+          },
+        }),
+      );
+    };
+
+    await scrollAt(600, 1000);
+    await scrollAt(600, 1100);
+    await act(async () => scroll.props.onContentSizeChange(100, 1100));
+    expect(state.scrollToEnd).toHaveBeenCalledWith({ animated: false });
+
+    state.scrollToEnd.mockClear();
+    await scrollAt(300, 1100);
+    await act(async () => scroll.props.onContentSizeChange(100, 1200));
+    expect(state.scrollToEnd).not.toHaveBeenCalled();
+
+    await scrollAt(800, 1200);
+    await act(async () => scroll.props.onContentSizeChange(100, 1300));
+    expect(state.scrollToEnd).toHaveBeenCalledWith({ animated: false });
+  });
+
+  it("keeps a manual scroll after scrollToEnd in control without an intermediate scroll event", async () => {
+    await render();
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    await act(async () => scroll.props.onContentSizeChange(100, 1000));
+    state.scrollToEnd.mockClear();
+    await act(async () =>
+      scroll.props.onScroll({
+        nativeEvent: {
+          contentOffset: { y: 500 },
+          contentSize: { height: 1000 },
+          layoutMeasurement: { height: 400 },
+        },
+      }),
+    );
+    await act(async () => scroll.props.onContentSizeChange(100, 1100));
+    expect(state.scrollToEnd).not.toHaveBeenCalled();
+  });
+
   it("renders the revealed thinking trace as plain selectable text", async () => {
     await render({
       ...props,

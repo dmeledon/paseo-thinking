@@ -2,7 +2,7 @@
 
 Codex thinking blocks start collapsed and show the latest text inside `**` beside Thinking. Claude blocks start expanded and show a running estimate of visible tokens beside Thinking. When a turn succeeds, its thinking blocks collapse. You can toggle each block afterward.
 
-The rows follow Paseo's standard thinking layout. Expanded text is plain selectable text and grows up to the default maximum height, then scrolls inside the block.
+The rows follow Paseo's standard thinking layout. Expanded text is plain selectable text and grows up to the default maximum height, then follows new text inside the block while streaming. Scrolling up pauses following until you return to the bottom.
 
 The Claude estimate uses one token per four text characters. It measures displayed text, which can be a summary, and is not the model's actual reasoning-token usage. Accuracy varies by language and content.
 

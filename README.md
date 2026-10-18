@@ -39,6 +39,6 @@ This repository is the distribution channel. The package is marked private becau
 - The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
 - Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Codex shows the latest text inside `**` beside Thinking; Claude shows the approximate token count there.
-- Expanded thinking text is plain selectable text. The detail area grows with its text up to the default 400-pixel maximum, then scrolls inside that height. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
+- Expanded thinking text is plain selectable text. The detail area grows with its text up to the default 400-pixel maximum, then follows new text inside the scrollable area while streaming. Scrolling up pauses following until you return to the bottom. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
 
 See [OVERVIEW.md](OVERVIEW.md) for the in-app description.

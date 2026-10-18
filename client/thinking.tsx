@@ -9,8 +9,13 @@ import {
   useRevealedText,
 } from "@getpaseo/plugin/client/react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ScrollView as NativeScrollView,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { z } from "zod";
 import {
   estimateTokens,
@@ -65,6 +70,30 @@ export function Thinking({
       : (manualExpansions.get(stateKey) ?? null);
   const expanded = expansionState(completion, manual, provider !== "codex");
   const [hovered, setHovered] = useState(false);
+  const scrollRef = useRef<NativeScrollView>(null);
+  const scrollPosition = useRef({
+    row: stateKey,
+    following: true,
+    offset: 0,
+    target: null as number | null,
+    viewport: 400,
+    streamed: false,
+  });
+  useEffect(() => {
+    if (scrollPosition.current.row !== stateKey)
+      scrollPosition.current = {
+        row: stateKey,
+        following: true,
+        offset: 0,
+        target: null,
+        viewport: 400,
+        streamed: false,
+      };
+    else if (expanded) {
+      scrollPosition.current.offset = 0;
+      scrollPosition.current.target = null;
+    }
+  }, [stateKey, expanded]);
   const text = useRevealedText(item.data.text, item.data.phase);
   const tokens = estimateTokens(item.data.text);
   const color = theme.colors.foregroundMuted;
@@ -177,10 +206,50 @@ export function Thinking({
           }}
         >
           <ScrollView
+            ref={scrollRef}
             testID="thinking-text-scroll"
             style={{ maxHeight: 400 }}
             nestedScrollEnabled
             showsVerticalScrollIndicator
+            scrollEventThrottle={16}
+            onLayout={(event) => {
+              scrollPosition.current.viewport = event.nativeEvent.layout.height;
+            }}
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } =
+                event.nativeEvent;
+              const position = scrollPosition.current;
+              const offset = contentOffset.y;
+              const remaining =
+                contentSize.height - layoutMeasurement.height - offset;
+              position.viewport = layoutMeasurement.height;
+              if (remaining <= 16) {
+                position.following = true;
+                position.target = null;
+              } else if (
+                offset < position.offset - 0.5 ||
+                (position.target !== null &&
+                  offset < position.target - 0.5 &&
+                  offset > position.offset + 0.5)
+              )
+                position.following = false;
+              position.offset = offset;
+            }}
+            onContentSizeChange={(_width, height) => {
+              const position = scrollPosition.current;
+              if (item.data.phase === "streaming") position.streamed = true;
+              const followFinal =
+                item.data.phase === "complete" && position.streamed;
+              if (followFinal && height > 400) position.streamed = false;
+              if (
+                (item.data.phase === "streaming" || followFinal) &&
+                height > 400 &&
+                position.following
+              ) {
+                position.target = Math.max(0, height - position.viewport);
+                scrollRef.current?.scrollToEnd({ animated: false });
+              }
+            }}
           >
             <Text
               selectable
