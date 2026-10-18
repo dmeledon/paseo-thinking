@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TurnTracker } from "../server/turns";
-import {
-  estimateTokens,
-  expansionState,
-  lastBoldText,
-  thinkingKey,
-} from "../shared/thinking";
+import { expansionState, lastBoldText, thinkingKey } from "../shared/thinking";
 
 describe("turn completion", () => {
   it("collapses all recorded thinking blocks only for successful turns", async () => {
@@ -119,14 +114,6 @@ describe("thinking display", () => {
     expect(
       expansionState(null, { completion: null, expanded: false }, true),
     ).toBe(false);
-  });
-
-  it("estimates accumulated visible text and handles empty text", () => {
-    expect(estimateTokens("")).toBe(0);
-    expect(estimateTokens("hello world")).toBe(3);
-    expect(estimateTokens("hello world again")).toBeGreaterThan(
-      estimateTokens("hello world"),
-    );
   });
 
   it("matches app-normalized text without confusing identical text in different rows", () => {

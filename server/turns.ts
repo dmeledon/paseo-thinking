@@ -1,25 +1,25 @@
-export class TurnTracker {
-  private active = new Set<string>();
-  private pending = new Map<string, number>();
-  private successes = new Map<string, Set<string>>();
-  private closed = new Set<string>();
-  private evictedPending = new Set<string>();
+type AgentTurns = {
+  active: boolean;
+  pending: number;
+  successes: Set<string>;
+};
 
-  private pruneClosed() {
-    // Keep recent closed agents available to history views, without retaining every session.
-    while (this.closed.size > 100) {
-      const oldest = this.closed.keys().next().value;
-      if (oldest === undefined) break;
-      this.closed.delete(oldest);
-      this.successes.delete(oldest);
-      if (this.pending.has(oldest)) this.evictedPending.add(oldest);
+export class TurnTracker {
+  private agents = new Map<string, AgentTurns>();
+  private closed = new Set<string>();
+
+  private state(agentId: string): AgentTurns {
+    let state = this.agents.get(agentId);
+    if (!state) {
+      state = { active: false, pending: 0, successes: new Set() };
+      this.agents.set(agentId, state);
     }
+    return state;
   }
 
   start(agentId: string) {
     this.closed.delete(agentId);
-    this.evictedPending.delete(agentId);
-    this.active.add(agentId);
+    this.state(agentId).active = true;
   }
 
   async end(
@@ -27,38 +27,40 @@ export class TurnTracker {
     outcome: "completed" | "failed" | "canceled",
     readKeys: () => Promise<string[]>,
   ) {
-    this.active.delete(agentId);
+    const state = this.state(agentId);
+    state.active = false;
     if (outcome !== "completed") return;
-    this.pending.set(agentId, (this.pending.get(agentId) ?? 0) + 1);
+    state.pending++;
     try {
       const keys = await readKeys();
-      if (keys.length && !this.evictedPending.has(agentId)) {
-        const successes = this.successes.get(agentId) ?? new Set<string>();
-        for (const key of keys) successes.add(key);
-        this.successes.set(agentId, successes);
-      }
+      // An evicted agent's late history read must not restore its result.
+      if (this.agents.get(agentId) === state)
+        for (const key of keys) state.successes.add(key);
     } finally {
-      const count = (this.pending.get(agentId) ?? 1) - 1;
-      if (count) this.pending.set(agentId, count);
-      else {
-        this.pending.delete(agentId);
-        this.evictedPending.delete(agentId);
-      }
-      this.pruneClosed();
+      state.pending--;
     }
   }
 
   read(agentId: string) {
+    const state = this.agents.get(agentId);
     return {
-      active: this.active.has(agentId) || this.pending.has(agentId),
-      successes: [...(this.successes.get(agentId) ?? [])],
+      active: Boolean(state?.active || state?.pending),
+      successes: [...(state?.successes ?? [])],
     };
   }
 
   close(agentId: string) {
-    this.active.delete(agentId);
+    const state = this.agents.get(agentId);
+    if (!state) return;
+    state.active = false;
     this.closed.delete(agentId);
     this.closed.add(agentId);
-    this.pruneClosed();
+    if (this.closed.size > 100) {
+      const oldest = this.closed.values().next().value;
+      if (oldest !== undefined) {
+        this.closed.delete(oldest);
+        this.agents.delete(oldest);
+      }
+    }
   }
 }

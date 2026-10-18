@@ -66,10 +66,7 @@ export function Thinking({
   const expanded = expansionState(completion, manual, provider !== "codex");
   const [hovered, setHovered] = useState(false);
   const text = useRevealedText(item.data.text, item.data.phase);
-  const tokens = useMemo(
-    () => estimateTokens(item.data.text),
-    [item.data.text],
-  );
+  const tokens = estimateTokens(item.data.text);
   const color = theme.colors.foregroundMuted;
   const activeColor = expanded || hovered ? theme.colors.foreground : color;
   const count = `~${tokens.toLocaleString()} visible tokens`;

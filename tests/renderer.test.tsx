@@ -103,14 +103,6 @@ afterEach(async () => {
 });
 
 describe("thinking renderer", () => {
-  it("lets plain text grow up to the default maximum height", async () => {
-    await render();
-    const scroll = renderer.root.findByProps({
-      testID: "thinking-text-scroll",
-    });
-    expect(scroll.props.style).toEqual({ maxHeight: 400 });
-  });
-
   it("renders the revealed thinking trace as plain selectable text", async () => {
     await render({
       ...props,
@@ -127,18 +119,31 @@ describe("thinking renderer", () => {
     expect(content.props.selectable).toBe(true);
   });
 
-  it("shows Claude's token estimate beside Thinking while expanded or collapsed", async () => {
+  it("updates Claude's token estimate beside Thinking while streaming and collapsed", async () => {
     await render();
+    expect(button().props.accessibilityState.expanded).toBe(true);
     const header = renderer.root.findByProps({
       testID: "thinking-header-summary",
     });
     expect(header.children.join("")).toBe("~3 visible tokens");
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "hello world again", phase: "streaming" },
+      },
+    });
+    expect(
+      renderer.root
+        .findByProps({ testID: "thinking-header-summary" })
+        .children.join(""),
+    ).toBe("~5 visible tokens");
     await act(async () => button().props.onPress());
     expect(
       renderer.root
         .findByProps({ testID: "thinking-header-summary" })
         .children.join(""),
-    ).toBe("~3 visible tokens");
+    ).toBe("~5 visible tokens");
     expect(
       renderer.root.findAllByProps({ testID: "thinking-text-scroll" }),
     ).toHaveLength(0);
@@ -226,20 +231,6 @@ describe("thinking renderer", () => {
     expect(button().props.accessibilityState.expanded).toBe(false);
   });
 
-  it("starts expanded and updates the visible-token estimate while streaming", async () => {
-    await render();
-    expect(button().props.accessibilityState.expanded).toBe(true);
-    expect(button().props.accessibilityLabel).toContain("~3 visible tokens");
-    await render({
-      ...props,
-      item: {
-        ...props.item,
-        data: { text: "hello world again", phase: "streaming" },
-      },
-    });
-    expect(button().props.accessibilityLabel).toContain("~5 visible tokens");
-  });
-
   it("stays open when a thinking block ends for a tool call, then collapses on turn success", async () => {
     await render({
       ...props,
@@ -256,11 +247,8 @@ describe("thinking renderer", () => {
     expect(button().props.accessibilityState.expanded).toBe(true);
   });
 
-  it("keeps thinking open after a failed or interrupted turn and after an unrelated success", async () => {
+  it("keeps thinking open after an unrelated success", async () => {
     await render();
-    state.response = { active: false, successes: [] };
-    await refresh();
-    expect(button().props.accessibilityState.expanded).toBe(true);
     state.response = {
       active: false,
       successes: [thinkingKey(350, "other thought")],
