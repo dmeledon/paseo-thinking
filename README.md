@@ -35,5 +35,6 @@ After editing source, run `paseo plugin reload thinking`. Do not restart the dae
 - Outcome tracking is in memory, so reloads and daemon restarts leave unknown history expanded. Manual toggles survive scrolling during the client session.
 - The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
+- Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Expanded text scrolls above a fixed counter footer; collapsed rows show the count in the header.
 
 See [OVERVIEW.md](OVERVIEW.md) for the in-app description.

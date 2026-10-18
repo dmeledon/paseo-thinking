@@ -17,6 +17,7 @@ vi.mock("@getpaseo/plugin/client", () => ({
 }));
 vi.mock("@getpaseo/plugin/client/react-native", () => ({
   Icon: () => null,
+  ScrollView: "scroll",
   useRevealedText: (text: string) => text,
 }));
 vi.mock("react-native", () => ({
@@ -99,6 +100,30 @@ afterEach(async () => {
 });
 
 describe("thinking renderer", () => {
+  it("keeps the expanded counter below the scrollable text and moves it to the header when collapsed", async () => {
+    await render();
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    const footer = renderer.root.findByProps({
+      testID: "thinking-counter-footer",
+    });
+    expect(
+      scroll.findAllByProps({ testID: "thinking-counter-footer" }),
+    ).toHaveLength(0);
+    expect(footer.children.join("")).toContain("visible tokens");
+    expect(
+      renderer.root.findAllByProps({ testID: "thinking-counter-summary" }),
+    ).toHaveLength(0);
+    await act(async () => button().props.onPress());
+    expect(
+      renderer.root.findAllByProps({ testID: "thinking-counter-footer" }),
+    ).toHaveLength(0);
+    expect(
+      renderer.root.findAllByProps({ testID: "thinking-counter-summary" }),
+    ).toHaveLength(1);
+  });
+
   it("starts expanded and updates the visible-token estimate while streaming", async () => {
     await render();
     expect(button().props.accessibilityState.expanded).toBe(true);

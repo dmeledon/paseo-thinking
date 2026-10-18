@@ -3,7 +3,11 @@ import {
   useAgent,
   useRpc,
 } from "@getpaseo/plugin/client";
-import { Icon, useRevealedText } from "@getpaseo/plugin/client/react-native";
+import {
+  Icon,
+  ScrollView,
+  useRevealedText,
+} from "@getpaseo/plugin/client/react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -49,49 +53,119 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
     if (manual) manualExpansions.set(stateKey, manual);
   }, [stateKey, manual]);
   const expanded = expansionState(completion, manual, true);
+  const [hovered, setHovered] = useState(false);
   const text = useRevealedText(item.data.text, item.data.phase);
   const tokens = useMemo(
     () => estimateTokens(item.data.text),
     [item.data.text],
   );
   const color = theme.colors.foregroundMuted;
+  const activeColor = expanded || hovered ? theme.colors.foreground : color;
+  const count = `~${tokens.toLocaleString()} visible tokens`;
 
   return (
-    <View style={{ paddingVertical: 6, gap: 8 }}>
+    <View style={{ marginHorizontal: -13, marginBottom: 4 }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${expanded ? "Collapse" : "Expand"} thinking, approximately ${tokens.toLocaleString()} visible tokens`}
         accessibilityState={{ expanded }}
         onPress={() => setManual({ completion, expanded: !expanded })}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        hitSlop={{ top: 7, bottom: 7 }}
         style={({ pressed }) => ({
           flexDirection: "row",
-          flexWrap: "wrap",
-          minHeight: 44,
           alignItems: "center",
-          gap: 6,
-          paddingVertical: 6,
-          opacity: pressed ? 0.65 : 1,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: expanded ? theme.colors.border : "transparent",
+          borderBottomLeftRadius: expanded ? 0 : 8,
+          borderBottomRightRadius: expanded ? 0 : 8,
+          backgroundColor: expanded ? theme.colors.surface1 : "transparent",
+          opacity: pressed ? 0.9 : 1,
         })}
       >
-        <Icon
-          name={expanded ? "ChevronDown" : "ChevronRight"}
-          size={14}
-          color={color}
-        />
-        <Text style={{ color, fontSize: 13 }}>
-          Thinking{item.data.phase === "streaming" ? "…" : ""}
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 4,
+          }}
+        >
+          <Icon
+            name={expanded ? "ChevronDown" : hovered ? "ChevronRight" : "Brain"}
+            size={14}
+            color={activeColor}
+          />
+        </View>
+        <Text
+          style={{
+            color: activeColor,
+            fontSize: 14,
+            opacity: item.data.phase === "streaming" ? 0.72 : 1,
+          }}
+        >
+          Thinking
         </Text>
-        <Text style={{ color, fontSize: 12 }}>
-          · ~{tokens.toLocaleString()} visible tokens
-        </Text>
+        {!expanded ? (
+          <Text
+            testID="thinking-counter-summary"
+            numberOfLines={1}
+            style={{ color, fontSize: 14, marginLeft: 8, flexShrink: 1 }}
+          >
+            {count}
+          </Text>
+        ) : null}
       </Pressable>
       {expanded ? (
-        <Text
-          selectable
-          style={{ color, fontSize: 13, lineHeight: 20, paddingLeft: 20 }}
+        <View
+          style={{
+            borderWidth: 1,
+            borderTopWidth: 0,
+            borderColor: theme.colors.border,
+            borderBottomLeftRadius: 8,
+            borderBottomRightRadius: 8,
+            overflow: "hidden",
+          }}
         >
-          {text}
-        </Text>
+          <ScrollView
+            testID="thinking-text-scroll"
+            style={{ maxHeight: 400 }}
+            contentContainerStyle={{ padding: 16 }}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+          >
+            <Text
+              selectable
+              style={{
+                color: theme.colors.foreground,
+                fontSize: 14,
+                lineHeight: 22,
+              }}
+            >
+              {text}
+            </Text>
+          </ScrollView>
+          <Text
+            testID="thinking-counter-footer"
+            style={{
+              color,
+              fontSize: 12,
+              textAlign: "right",
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
+              backgroundColor: theme.colors.surface1,
+            }}
+          >
+            {count}
+          </Text>
+        </View>
       ) : null}
     </View>
   );
