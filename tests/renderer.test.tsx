@@ -183,6 +183,49 @@ describe("thinking renderer", () => {
     ).toBe("· Removing plugin");
   });
 
+  it("keeps one manual expansion entry as a Codex trace streams", async () => {
+    state.provider = "codex";
+    await render({
+      ...props,
+      item: { ...props.item, data: { text: "**Start**", phase: "streaming" } },
+    });
+    await act(async () => button().props.onPress());
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "**Start****More**", phase: "streaming" },
+      },
+    });
+    expect(manualExpansions.size).toBe(1);
+    await act(async () => renderer.unmount());
+    renderer = undefined as unknown as ReactTestRenderer;
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "**Start****More**", phase: "complete" },
+      },
+    });
+    expect(button().props.accessibilityState.expanded).toBe(true);
+  });
+
+  it("does not carry a manual toggle into a different Codex row", async () => {
+    state.provider = "codex";
+    await render();
+    await act(async () => button().props.onPress());
+    expect(button().props.accessibilityState.expanded).toBe(true);
+    await render({
+      ...props,
+      timestamp: new Date(151),
+      item: {
+        ...props.item,
+        data: { text: "another row", phase: "complete" },
+      },
+    });
+    expect(button().props.accessibilityState.expanded).toBe(false);
+  });
+
   it("starts expanded and updates the visible-token estimate while streaming", async () => {
     await render();
     expect(button().props.accessibilityState.expanded).toBe(true);

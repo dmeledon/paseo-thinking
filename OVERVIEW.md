@@ -8,4 +8,4 @@ The Claude estimate uses one token per four text characters. It measures display
 
 Requires Paseo 0.11.4 or later. The plugin provides its own thinking rows and does not read Paseo's built-in thinking expansion preference.
 
-The daemon component observes turn outcomes and reads thinking rows from Paseo's timeline to identify successful turns. It keeps that information in memory, makes no external requests, and reads no files. Older turns whose completion the plugin did not observe use their provider's default expansion state. Reloading the plugin or restarting the daemon clears remembered outcomes.
+The daemon component observes turn outcomes and reads thinking rows from Paseo's timeline to identify successful turns. It retries temporary timeline errors. It keeps the 100 most recently closed agents' results in memory, makes no external requests, and reads no files. Older turns whose completion the plugin did not observe use their provider's default expansion state. Reloading the plugin or restarting the daemon clears remembered outcomes.

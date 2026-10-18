@@ -54,13 +54,15 @@ export function Thinking({
     [timestamp, item.data.text],
   );
   const completion = turns.data?.successes.includes(key) ? key : null;
-  const stateKey = JSON.stringify([host.id, agentId, key]);
-  const [manual, setManual] = useState<ManualExpansion | null>(
-    () => manualExpansions.get(stateKey) ?? null,
-  );
-  useEffect(() => {
-    if (manual) manualExpansions.set(stateKey, manual);
-  }, [stateKey, manual]);
+  const stateKey = JSON.stringify([host.id, agentId, timestamp.getTime()]);
+  const [manualOverride, setManualOverride] = useState<{
+    stateKey: string;
+    value: ManualExpansion;
+  } | null>(null);
+  const manual =
+    manualOverride?.stateKey === stateKey
+      ? manualOverride.value
+      : (manualExpansions.get(stateKey) ?? null);
   const expanded = expansionState(completion, manual, provider !== "codex");
   const [hovered, setHovered] = useState(false);
   const text = useRevealedText(item.data.text, item.data.phase);
@@ -84,7 +86,11 @@ export function Thinking({
         accessibilityRole="button"
         accessibilityLabel={`${expanded ? "Collapse" : "Expand"} thinking${summary ? `, ${summary}` : ""}`}
         accessibilityState={{ expanded }}
-        onPress={() => setManual({ completion, expanded: !expanded })}
+        onPress={() => {
+          const value = { completion, expanded: !expanded };
+          manualExpansions.set(stateKey, value);
+          setManualOverride({ stateKey, value });
+        }}
         onHoverIn={() => setHovered(true)}
         onHoverOut={() => setHovered(false)}
         hitSlop={{ top: 7, bottom: 7 }}

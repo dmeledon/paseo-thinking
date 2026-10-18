@@ -8,7 +8,7 @@ Requires Paseo 0.11.4 or later, with plugins enabled. No core changes are needed
 
 ## Install
 
-Enable plugins in Paseo, then install this private Git repository using credentials available on the daemon machine:
+Once this repository is public, enable plugins in Paseo and install it from GitHub:
 
 ```sh
 paseo plugin install github:dmeledon/paseo-thinking
@@ -26,6 +26,8 @@ paseo plugin install /absolute/path/to/paseo-thinking
 
 After editing source, run `paseo plugin reload thinking`. Do not restart the daemon to reload a plugin.
 
+This repository is the distribution channel. The package is marked private because it is not published to npm.
+
 ## Behavior and limits
 
 - Counts are explicitly approximate: displayed JavaScript string length divided by four, rounded up. They are not billable usage or hidden reasoning tokens.
@@ -33,6 +35,7 @@ After editing source, run `paseo plugin reload thinking`. Do not restart the dae
 - Turn IDs and recorded row timestamps identify the thinking belonging to a successful turn. Missing outcomes are never assumed to mean success.
 - Providers must distinguish adjacent turns with different IDs; the plugin reads the latest contiguous group with the completed turn's ID.
 - Outcome tracking is in memory. Reloads and daemon restarts leave unknown history at each provider's default expansion state. Manual toggles survive scrolling during the client session.
+- A temporary timeline read error is retried before giving up. Success keys for the 100 most recently closed agents remain available to history views; older ones return to their provider's default expansion state.
 - The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
 - Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Codex shows the latest text inside `**` beside Thinking; Claude shows the approximate token count there.

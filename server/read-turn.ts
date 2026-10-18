@@ -10,6 +10,20 @@ export async function readTurnKeys(
   timeline: Timeline,
   turnId: string,
 ): Promise<string[]> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await readTurnKeysOnce(timeline, turnId);
+    } catch (error) {
+      if (attempt === 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
+    }
+  }
+}
+
+async function readTurnKeysOnce(
+  timeline: Timeline,
+  turnId: string,
+): Promise<string[]> {
   let page = await timeline.refetch({ projection: "projected", limit: 200 });
   const keys: string[] = [];
   let found = false;

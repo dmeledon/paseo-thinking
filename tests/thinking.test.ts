@@ -62,6 +62,41 @@ describe("turn completion", () => {
     ).rejects.toThrow("offline");
     expect(turns.read("a")).toEqual({ active: false, successes: [] });
   });
+
+  it("retains recent closed agents but evicts older success keys", async () => {
+    const turns = new TurnTracker();
+    for (let index = 0; index <= 100; index++) {
+      const agentId = `agent-${index}`;
+      await turns.end(agentId, "completed", async () => [`key-${index}`]);
+      turns.close(agentId);
+    }
+    expect(turns.read("agent-0").successes).toEqual([]);
+    expect(turns.read("agent-1").successes).toEqual(["key-1"]);
+    expect(turns.read("agent-100").successes).toEqual(["key-100"]);
+  });
+
+  it("does not restore an evicted agent after a pending history read finishes", async () => {
+    const turns = new TurnTracker();
+    let finish: (keys: string[]) => void = () => {};
+    const pending = turns.end(
+      "old",
+      "completed",
+      () =>
+        new Promise<string[]>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    turns.close("old");
+    for (let index = 0; index < 100; index++) {
+      const agentId = `new-${index}`;
+      await turns.end(agentId, "completed", async () => [`key-${index}`]);
+      turns.close(agentId);
+    }
+    finish(["old-key"]);
+    await pending;
+    expect(turns.read("old").successes).toEqual([]);
+    expect(turns.read("new-0").successes).toEqual(["key-0"]);
+  });
 });
 
 describe("thinking display", () => {

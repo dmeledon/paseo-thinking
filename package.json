@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Streaming thinking estimates and successful-turn auto-collapse for Paseo.",
+  "description": "Provider-specific thinking summaries and successful-turn auto-collapse for Paseo.",
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",

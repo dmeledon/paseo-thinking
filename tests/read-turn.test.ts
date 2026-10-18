@@ -97,4 +97,20 @@ describe("authoritative turn history", () => {
       readTurnKeys({ refetch: async () => history }, "success"),
     ).rejects.toThrow("history changed");
   });
+
+  it("restarts a history read after a temporary gap", async () => {
+    let reads = 0;
+    const timeline: Timeline = {
+      refetch: async () => {
+        reads++;
+        return reads === 1
+          ? { ...page([row("success", "thought", 10)]), gap: true }
+          : page([row("success", "thought", 10)]);
+      },
+    };
+    expect(await readTurnKeys(timeline, "success")).toEqual([
+      thinkingKey(10, "thought"),
+    ]);
+    expect(reads).toBe(2);
+  });
 });
