@@ -1,6 +1,6 @@
 # paseo-thinking
 
-A Paseo plugin that estimates visible thinking tokens as they stream and collapses every thinking block after a successful turn. Blocks start expanded. Failed and interrupted turns do not auto-collapse. Blocks remain manually toggleable.
+A Paseo plugin that shows the latest bold thinking summary for Codex and an estimate of visible thinking tokens for Claude. Codex blocks start collapsed; Claude blocks start expanded. Successful turns collapse their thinking blocks. Blocks remain manually toggleable.
 
 ## Compatibility
 
@@ -32,10 +32,10 @@ After editing source, run `paseo plugin reload thinking`. Do not restart the dae
 - While a turn is active, mounted thinking rows poll outcomes once per second, sharing a query cache and in-flight requests. A successful outcome triggers a paginated read of its recorded thinking rows before they collapse.
 - Turn IDs and recorded row timestamps identify the thinking belonging to a successful turn. Missing outcomes are never assumed to mean success.
 - Providers must distinguish adjacent turns with different IDs; the plugin reads the latest contiguous group with the completed turn's ID.
-- Outcome tracking is in memory, so reloads and daemon restarts leave unknown history expanded. Manual toggles survive scrolling during the client session.
+- Outcome tracking is in memory. Reloads and daemon restarts leave unknown history at each provider's default expansion state. Manual toggles survive scrolling during the client session.
 - The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
-- Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Expanded text scrolls above a fixed counter footer; collapsed rows show the count in the header.
-- During streaming, the detail area reserves the default 400-pixel maximum (368 pixels of scrollable text plus a 32-pixel counter footer), keeping the counter still as new lines arrive. Finished blocks shrink to their content. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
+- Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Codex shows the latest text inside `**` beside Thinking; Claude shows the approximate token count there.
+- Expanded thinking text is plain selectable text. The detail area grows with its text up to the default 400-pixel maximum, then scrolls inside that height. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
 
 See [OVERVIEW.md](OVERVIEW.md) for the in-app description.

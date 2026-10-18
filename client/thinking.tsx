@@ -15,6 +15,7 @@ import { z } from "zod";
 import {
   estimateTokens,
   expansionState,
+  lastBoldText,
   type ManualExpansion,
   thinkingKey,
 } from "../shared/thinking";
@@ -38,6 +39,7 @@ export function Thinking({
 }: Props) {
   const readTurns = useRpc(getTurns);
   const status = useAgent(agentId, (agent) => agent.status);
+  const provider = useAgent(agentId, (agent) => agent.provider);
   const turns = useQuery({
     queryKey: ["thinking.turns", host.id, agentId],
     queryFn: () => readTurns({ agentId }),
@@ -59,7 +61,7 @@ export function Thinking({
   useEffect(() => {
     if (manual) manualExpansions.set(stateKey, manual);
   }, [stateKey, manual]);
-  const expanded = expansionState(completion, manual, true);
+  const expanded = expansionState(completion, manual, provider !== "codex");
   const [hovered, setHovered] = useState(false);
   const text = useRevealedText(item.data.text, item.data.phase);
   const tokens = useMemo(
@@ -69,19 +71,18 @@ export function Thinking({
   const color = theme.colors.foregroundMuted;
   const activeColor = expanded || hovered ? theme.colors.foreground : color;
   const count = `~${tokens.toLocaleString()} visible tokens`;
-  const streaming = item.data.phase === "streaming";
+  const summary = provider === "codex" ? lastBoldText(item.data.text) : count;
   const fontFamily =
     layout.platform === "web"
       ? "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
       : layout.platform === "ios"
         ? "system-ui"
         : "normal";
-
   return (
     <View style={{ marginHorizontal: -13, marginBottom: 4 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${expanded ? "Collapse" : "Expand"} thinking, approximately ${tokens.toLocaleString()} visible tokens`}
+        accessibilityLabel={`${expanded ? "Collapse" : "Expand"} thinking${summary ? `, ${summary}` : ""}`}
         accessibilityState={{ expanded }}
         onPress={() => setManual({ completion, expanded: !expanded })}
         onHoverIn={() => setHovered(true)}
@@ -140,9 +141,9 @@ export function Thinking({
         >
           Thinking
         </Text>
-        {!expanded ? (
+        {summary ? (
           <Text
-            testID="thinking-counter-summary"
+            testID="thinking-header-summary"
             numberOfLines={1}
             style={{
               color,
@@ -150,10 +151,13 @@ export function Thinking({
               fontSize: 14,
               marginLeft: 8,
               flexShrink: 1,
-              fontVariant: ["tabular-nums"],
+              ...(provider === "codex"
+                ? {}
+                : { fontVariant: ["tabular-nums"] }),
             }}
           >
-            {count}
+            {provider === "codex" ? "· " : ""}
+            {summary}
           </Text>
         ) : null}
       </Pressable>
@@ -166,12 +170,12 @@ export function Thinking({
             borderBottomLeftRadius: 8,
             borderBottomRightRadius: 8,
             overflow: "hidden",
+            backgroundColor: theme.colors.surface2,
           }}
         >
           <ScrollView
             testID="thinking-text-scroll"
-            style={{ maxHeight: 368, height: streaming ? 368 : undefined }}
-            contentContainerStyle={{ padding: 12 }}
+            style={{ maxHeight: 400 }}
             nestedScrollEnabled
             showsVerticalScrollIndicator
           >
@@ -182,29 +186,12 @@ export function Thinking({
                 fontFamily,
                 fontSize: 14,
                 lineHeight: 22,
+                padding: 12,
               }}
             >
               {text}
             </Text>
           </ScrollView>
-          <Text
-            testID="thinking-counter-footer"
-            numberOfLines={1}
-            style={{
-              color,
-              fontFamily,
-              fontSize: 12,
-              lineHeight: 16,
-              fontVariant: ["tabular-nums"],
-              textAlign: "right",
-              height: 32,
-              flexShrink: 0,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-            }}
-          >
-            {count}
-          </Text>
         </View>
       ) : null}
     </View>

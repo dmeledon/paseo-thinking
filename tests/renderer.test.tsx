@@ -9,10 +9,12 @@ import { thinkingKey } from "../shared/thinking";
 
 const state = vi.hoisted(() => ({
   response: { active: true, successes: [] as string[] },
+  provider: "claude",
 }));
 
 vi.mock("@getpaseo/plugin/client", () => ({
-  useAgent: () => "running",
+  useAgent: (_agentId: string, selector: (agent: unknown) => unknown) =>
+    selector({ status: "running", provider: state.provider }),
   useRpc: () => async () => state.response,
 }));
 vi.mock("@getpaseo/plugin/client/react-native", () => ({
@@ -91,6 +93,7 @@ beforeEach(() => {
   manualExpansions.clear();
   query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   state.response = { active: true, successes: [] };
+  state.provider = "claude";
 });
 
 afterEach(async () => {
@@ -100,63 +103,90 @@ afterEach(async () => {
 });
 
 describe("thinking renderer", () => {
-  it("reserves the streaming viewport so new lines cannot move the counter footer", async () => {
-    await render();
-    const firstHeight = renderer.root.findByProps({
-      testID: "thinking-text-scroll",
-    }).props.style.height;
-    expect(firstHeight).toBeGreaterThan(0);
-    await render({
-      ...props,
-      item: {
-        ...props.item,
-        data: { text: "line\n".repeat(100), phase: "streaming" },
-      },
-    });
-    expect(
-      renderer.root.findByProps({ testID: "thinking-text-scroll" }).props.style
-        .height,
-    ).toBe(firstHeight);
-    await render({
-      ...props,
-      item: { ...props.item, data: { text: "finished", phase: "complete" } },
-    });
-    expect(
-      renderer.root.findByProps({ testID: "thinking-text-scroll" }).props.style
-        .height,
-    ).toBeUndefined();
-  });
-
-  it("keeps the expanded counter below the scrollable text and moves it to the header when collapsed", async () => {
+  it("lets plain text grow up to the default maximum height", async () => {
     await render();
     const scroll = renderer.root.findByProps({
       testID: "thinking-text-scroll",
     });
-    const footer = renderer.root.findByProps({
-      testID: "thinking-counter-footer",
+    expect(scroll.props.style).toEqual({ maxHeight: 400 });
+  });
+
+  it("renders the revealed thinking trace as plain selectable text", async () => {
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "## Plan\n\n**First step**", phase: "streaming" },
+      },
     });
-    expect(
-      scroll.findAllByProps({ testID: "thinking-counter-footer" }),
-    ).toHaveLength(0);
-    expect(footer.children.join("")).toContain("visible tokens");
-    expect(
-      renderer.root.findAllByProps({ testID: "thinking-counter-summary" }),
-    ).toHaveLength(0);
+    const scroll = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    });
+    const content = scroll.findByType("text");
+    expect(content.props.children).toBe("## Plan\n\n**First step**");
+    expect(content.props.selectable).toBe(true);
+  });
+
+  it("shows Claude's token estimate beside Thinking while expanded or collapsed", async () => {
+    await render();
+    const header = renderer.root.findByProps({
+      testID: "thinking-header-summary",
+    });
+    expect(header.children.join("")).toBe("~3 visible tokens");
     await act(async () => button().props.onPress());
     expect(
-      renderer.root.findAllByProps({ testID: "thinking-counter-footer" }),
-    ).toHaveLength(0);
+      renderer.root
+        .findByProps({ testID: "thinking-header-summary" })
+        .children.join(""),
+    ).toBe("~3 visible tokens");
     expect(
-      renderer.root.findAllByProps({ testID: "thinking-counter-summary" }),
-    ).toHaveLength(1);
+      renderer.root.findAllByProps({ testID: "thinking-text-scroll" }),
+    ).toHaveLength(0);
+  });
+
+  it("starts Codex collapsed and updates the latest bold summary as text arrives", async () => {
+    state.provider = "codex";
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "**Checking source**", phase: "streaming" },
+      },
+    });
+    expect(button().props.accessibilityState.expanded).toBe(false);
+    expect(
+      renderer.root
+        .findByProps({ testID: "thinking-header-summary" })
+        .children.join(""),
+    ).toBe("· Checking source");
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: {
+          text: "**Checking source****Removing plugin**",
+          phase: "streaming",
+        },
+      },
+    });
+    expect(
+      renderer.root
+        .findByProps({ testID: "thinking-header-summary" })
+        .children.join(""),
+    ).toBe("· Removing plugin");
+    await act(async () => button().props.onPress());
+    expect(button().props.accessibilityState.expanded).toBe(true);
+    expect(
+      renderer.root
+        .findByProps({ testID: "thinking-header-summary" })
+        .children.join(""),
+    ).toBe("· Removing plugin");
   });
 
   it("starts expanded and updates the visible-token estimate while streaming", async () => {
     await render();
     expect(button().props.accessibilityState.expanded).toBe(true);
-    expect(button().props.accessibilityLabel).toContain(
-      "approximately 3 visible tokens",
-    );
+    expect(button().props.accessibilityLabel).toContain("~3 visible tokens");
     await render({
       ...props,
       item: {
@@ -164,9 +194,7 @@ describe("thinking renderer", () => {
         data: { text: "hello world again", phase: "streaming" },
       },
     });
-    expect(button().props.accessibilityLabel).toContain(
-      "approximately 5 visible tokens",
-    );
+    expect(button().props.accessibilityLabel).toContain("~5 visible tokens");
   });
 
   it("stays open when a thinking block ends for a tool call, then collapses on turn success", async () => {

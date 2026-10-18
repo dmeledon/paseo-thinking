@@ -3,6 +3,7 @@ import { TurnTracker } from "../server/turns";
 import {
   estimateTokens,
   expansionState,
+  lastBoldText,
   thinkingKey,
 } from "../shared/thinking";
 
@@ -64,6 +65,14 @@ describe("turn completion", () => {
 });
 
 describe("thinking display", () => {
+  it("uses the latest bold span as a Codex summary, including text still arriving", () => {
+    expect(lastBoldText("plain text")).toBeNull();
+    expect(lastBoldText("**First****Second**")).toBe("Second");
+    expect(lastBoldText("**First** then **Second in progress")).toBe(
+      "Second in progress",
+    );
+  });
+
   it("collapses on success even if opened while streaming, then permits reopening", () => {
     expect(expansionState(null, null, true)).toBe(true);
     expect(

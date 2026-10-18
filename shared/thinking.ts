@@ -3,6 +3,22 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
+export function lastBoldText(text: string): string | null {
+  let latest: string | null = null;
+  let end = 0;
+  for (const match of text.matchAll(/\*\*([\s\S]*?)\*\*/g)) {
+    const value = match[1]?.trim();
+    if (value) latest = value;
+    end = (match.index ?? 0) + match[0].length;
+  }
+  const open = text.indexOf("**", end);
+  if (open !== -1) {
+    const value = text.slice(open + 2).trim();
+    if (value) latest = value;
+  }
+  return latest;
+}
+
 export function thinkingKey(timestamp: number, text: string): string {
   let first = 2166136261;
   let second = 5381;
