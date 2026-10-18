@@ -100,6 +100,33 @@ afterEach(async () => {
 });
 
 describe("thinking renderer", () => {
+  it("reserves the streaming viewport so new lines cannot move the counter footer", async () => {
+    await render();
+    const firstHeight = renderer.root.findByProps({
+      testID: "thinking-text-scroll",
+    }).props.style.height;
+    expect(firstHeight).toBeGreaterThan(0);
+    await render({
+      ...props,
+      item: {
+        ...props.item,
+        data: { text: "line\n".repeat(100), phase: "streaming" },
+      },
+    });
+    expect(
+      renderer.root.findByProps({ testID: "thinking-text-scroll" }).props.style
+        .height,
+    ).toBe(firstHeight);
+    await render({
+      ...props,
+      item: { ...props.item, data: { text: "finished", phase: "complete" } },
+    });
+    expect(
+      renderer.root.findByProps({ testID: "thinking-text-scroll" }).props.style
+        .height,
+    ).toBeUndefined();
+  });
+
   it("keeps the expanded counter below the scrollable text and moves it to the header when collapsed", async () => {
     await render();
     const scroll = renderer.root.findByProps({

@@ -2,7 +2,7 @@
 
 See a running estimate of the visible tokens in each thinking block. Blocks start expanded. When a turn succeeds, all its thinking blocks collapse. Interrupted and failed turns keep their current expansion state. You can toggle each block afterward.
 
-The rows follow Paseo's standard thinking layout. When expanded, the counter stays in a footer below the scrollable text. When collapsed, it sits beside the Thinking label.
+The rows follow Paseo's standard thinking layout. When expanded, the counter stays in a footer below the scrollable text. Streaming blocks reserve a fixed detail height so new lines do not move the counter; finished blocks shrink to fit. When collapsed, it sits beside the Thinking label.
 
 The estimate uses one token per four text characters. It measures displayed text, which can be a summary, and is not the model's actual reasoning-token usage. Accuracy varies by language and content.
 

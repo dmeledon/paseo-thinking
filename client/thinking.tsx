@@ -28,7 +28,14 @@ export const thinkingSchema = z.object({
 
 type Props = PluginTimelineItemProps<z.output<typeof thinkingSchema>>;
 
-export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
+export function Thinking({
+  agentId,
+  host,
+  item,
+  theme,
+  timestamp,
+  layout,
+}: Props) {
   const readTurns = useRpc(getTurns);
   const status = useAgent(agentId, (agent) => agent.status);
   const turns = useQuery({
@@ -62,6 +69,13 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
   const color = theme.colors.foregroundMuted;
   const activeColor = expanded || hovered ? theme.colors.foreground : color;
   const count = `~${tokens.toLocaleString()} visible tokens`;
+  const streaming = item.data.phase === "streaming";
+  const fontFamily =
+    layout.platform === "web"
+      ? "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      : layout.platform === "ios"
+        ? "system-ui"
+        : "normal";
 
   return (
     <View style={{ marginHorizontal: -13, marginBottom: 4 }}>
@@ -96,15 +110,30 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
             marginRight: 4,
           }}
         >
-          <Icon
-            name={expanded ? "ChevronDown" : hovered ? "ChevronRight" : "Brain"}
-            size={14}
-            color={activeColor}
-          />
+          <View
+            style={
+              expanded || hovered
+                ? {
+                    marginLeft: -4,
+                    transform: [
+                      { scale: 1.3 },
+                      { rotate: expanded ? "90deg" : "0deg" },
+                    ],
+                  }
+                : { marginLeft: -1 }
+            }
+          >
+            <Icon
+              name={expanded || hovered ? "ChevronRight" : "Brain"}
+              size={12}
+              color={activeColor}
+            />
+          </View>
         </View>
         <Text
           style={{
             color: activeColor,
+            fontFamily,
             fontSize: 14,
             opacity: item.data.phase === "streaming" ? 0.72 : 1,
           }}
@@ -115,7 +144,14 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
           <Text
             testID="thinking-counter-summary"
             numberOfLines={1}
-            style={{ color, fontSize: 14, marginLeft: 8, flexShrink: 1 }}
+            style={{
+              color,
+              fontFamily,
+              fontSize: 14,
+              marginLeft: 8,
+              flexShrink: 1,
+              fontVariant: ["tabular-nums"],
+            }}
           >
             {count}
           </Text>
@@ -134,8 +170,8 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
         >
           <ScrollView
             testID="thinking-text-scroll"
-            style={{ maxHeight: 400 }}
-            contentContainerStyle={{ padding: 16 }}
+            style={{ maxHeight: 368, height: streaming ? 368 : undefined }}
+            contentContainerStyle={{ padding: 12 }}
             nestedScrollEnabled
             showsVerticalScrollIndicator
           >
@@ -143,6 +179,7 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
               selectable
               style={{
                 color: theme.colors.foreground,
+                fontFamily,
                 fontSize: 14,
                 lineHeight: 22,
               }}
@@ -152,15 +189,18 @@ export function Thinking({ agentId, host, item, theme, timestamp }: Props) {
           </ScrollView>
           <Text
             testID="thinking-counter-footer"
+            numberOfLines={1}
             style={{
               color,
+              fontFamily,
               fontSize: 12,
+              lineHeight: 16,
+              fontVariant: ["tabular-nums"],
               textAlign: "right",
-              paddingHorizontal: 16,
+              height: 32,
+              flexShrink: 0,
+              paddingHorizontal: 12,
               paddingVertical: 8,
-              borderTopWidth: 1,
-              borderTopColor: theme.colors.border,
-              backgroundColor: theme.colors.surface1,
             }}
           >
             {count}

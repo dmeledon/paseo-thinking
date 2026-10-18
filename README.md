@@ -36,5 +36,6 @@ After editing source, run `paseo plugin reload thinking`. Do not restart the dae
 - The plugin replaces thinking rows. Disable another plugin that claims reasoning rows, such as `inline-thinking`, before enabling this one.
 - Client UI uses React Native primitives, theme colors, keyboard-accessible buttons, selectable text, and the host's streamed-text reveal hook.
 - Styling follows Paseo's built-in thinking badge: compact header, brain/disclosure icon, attached bordered details, and normal body typography. Expanded text scrolls above a fixed counter footer; collapsed rows show the count in the header.
+- During streaming, the detail area reserves the default 400-pixel maximum (368 pixels of scrollable text plus a 32-pixel counter footer), keeping the counter still as new lines arrive. Finished blocks shrink to their content. The plugin uses Paseo's default platform font stack; custom app typography settings are not exposed by the plugin API.
 
 See [OVERVIEW.md](OVERVIEW.md) for the in-app description.
