@@ -1,8 +1,8 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { PluginHandlerContext } from "@getpaseo/plugin/server";
 import { thinkingKey } from "../shared/thinking";
 
 type Timeline = Pick<
-  ReturnType<PaseoApi["agents"]["ref"]>["timeline"],
+  ReturnType<PluginHandlerContext["paseo"]["agents"]["ref"]>["timeline"],
   "refetch"
 >;
 
